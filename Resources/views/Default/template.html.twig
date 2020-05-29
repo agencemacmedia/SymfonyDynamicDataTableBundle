@@ -1,0 +1,42 @@
+{% spaceless %}
+    {% set output=[] %}
+
+    {% for key, data in input %}
+
+        {% set obj = [] %}
+
+        {% for key, property in properties %}
+
+            {% if property == 'title' %}
+
+                {% set obj = obj|merge([('
+
+                    %s
+
+                ')|format(data.title)
+                ]) %}
+
+            {% elseif property == 'author' %}
+                {% set obj = obj|merge([('
+
+                    %s
+
+                ')|format(data.author)
+                ]) %}
+            {% elseif property == 'date' %}
+                {% set obj = obj|merge([('
+
+                        %s
+
+                ')|format(data.date|date("Y-m-d H:i:s"))
+                ]) %}
+
+            {% endif %}
+
+        {% endfor %}
+
+        {% set output = output|merge([obj]) %}
+
+    {% endfor %}
+    {{ output|json_encode|raw }}
+{% endspaceless %}

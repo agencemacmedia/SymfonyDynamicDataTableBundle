@@ -1,0 +1,3 @@
+amm_symfony_dynamic_data_table:
+    path:     /getInfo
+    defaults: { _controller: AMMSymfonyDynamicDataTableBundle:Default:index }

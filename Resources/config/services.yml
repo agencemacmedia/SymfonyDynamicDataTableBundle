@@ -1,0 +1,7 @@
+services:
+#    amm_symfony_dynamic_data_table.example:
+#        class: AMM\SymfonyDynamicDataTableBundle\Example
+#        arguments: ["@service_id", "plain_value", "%parameter%"]
+  amm_symfony_dynamic_data_table.builddataservice:
+    class: AMM\SymfonyDynamicDataTableBundle\Services\BuildDataService
+    arguments: ["@twig",'@doctrine.orm.entity_manager']

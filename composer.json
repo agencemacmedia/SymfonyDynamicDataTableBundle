@@ -1,0 +1,12 @@
+{
+    "name": "SymfonyDynamicDataTableBundle",
+    "license": "GPL-2.0-only",
+    "version": "0.0.1",
+    "type": "symfony-bundle",
+    "description": "Easily build lazy-loading DataTables",
+    "autoload": {
+        "psr-4": {
+            "AMM\\SymfonyDynamicDataTableBundle\\": ""
+        }
+    }
+}
