@@ -178,6 +178,7 @@ The only two controller functions that you need are :
 
 - One to load your view.
 - One that will fetch and return the data requested by the DataTable.
+    - It is also possible to add your parameters to the query before the final render
 					
 The last function needs to create a BuildDataService service __and set his parameters__.
 
@@ -194,6 +195,8 @@ Heres how your two functions should look like in the end :
         $serviceDT = $this->get("amm_symfony_dynamic_data_table.builddataservice");
 
         $serviceDT->set(Advert::class,Advert::DATATABLE_Edit);
+	
+	$query = $serviceDT->getBasicQuery($request);
 	
 	// ...
 	
