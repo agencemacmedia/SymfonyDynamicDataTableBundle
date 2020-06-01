@@ -70,8 +70,8 @@ You'll also need a script that:
 - Initialise a variable with the Url for the controller that fetches the data
 - Initialise the DataTable into a variable 
 - Calls the config function, either the single or the multi searchBar one:
-    __For a single searchbar : configDataTableSingleSearch__
-	__For a multi searchbar : configDataTableMultiSearch__
+- __For a single searchbar : configDataTableSingleSearch__
+- __For a multi searchbar : configDataTableMultiSearch__
 
 Here is the needed parameters for these functions:
 - __For both__ the single and the multi search you need to pass the table object created in your script.
@@ -91,7 +91,7 @@ Exemple of how the whole script should look like:
         var datatableurl = "{{ path('Your_datatable_fetch_data') }}";
     
         var table = $('#YourId_dt_table').DataTable({
-            columnDefs":[
+            "columnDefs":[
     			{"name": "title", "targets": 0},        # Here set all the columns 
     			{"name": "author", "targets": 1},       # that are in the DataTable	
     			{"name": "date", "targets": 2},		    # With an index that represents	
