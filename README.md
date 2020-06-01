@@ -8,7 +8,7 @@ This bundle has been developped and tested in Symfony 3.4 and using PHP 7.1.33
 
 1. Add the bundle to your required composer libraries with the command :
     ```
-    composer require AMM/SymfonyDynamicDataTableBundle
+    composer require amm/symfony-dynamic-datatable-bundle
     ```
 2. Include the bundle into your AppKernel. Ex:
     ```php
@@ -70,8 +70,8 @@ You'll also need a script that:
 - Initialise a variable with the Url for the controller that fetches the data
 - Initialise the DataTable into a variable 
 - Calls the config function, either the single or the multi searchBar one:
-- __For a single searchbar : configDataTableSingleSearch__
-- __For a multi searchbar : configDataTableMultiSearch__
+    - __For a single searchbar : configDataTableSingleSearch__
+    - __For a multi searchbar : configDataTableMultiSearch__
 
 Here is the needed parameters for these functions:
 - __For both__ the single and the multi search you need to pass the table object created in your script.
