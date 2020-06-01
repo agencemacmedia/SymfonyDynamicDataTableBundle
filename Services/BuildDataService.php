@@ -43,19 +43,17 @@ class BuildDataService
             $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->className);
         }
     }
-
     /**
      * @param Request $request The request sent by your DataTable
-     * @return JsonResponse Returns yout formated Data that you can send back directly to your DataTable
+     * @return QueryBuilder Returns a query on which you can add parameters
      */
-    public function getDataTableFormatedData(Request $request)
+    public function getBasicQuery(Request $request)
     {
         //Check to see if the set has been made
         if($this->object !== null && $this->template !== null&& $this->em !== null && $this->qb !== null)
         {
             //Builds a reflection class to list all properties
             $reflect = new ReflectionClass($this->object);
-            $repository = $this->em->getRepository($this->object);
 
             if ($request->getMethod() == 'POST') {
                 $start = $request->request->get('iDisplayStart');
@@ -68,6 +66,7 @@ class BuildDataService
 
             //Array with all the columns currently in the DataTable
             $colName = explode(',', $columns);
+            $this->colName = $colName;
             $colSearch =[];
 
             //Check to see if single search or multisearch
@@ -94,58 +93,21 @@ class BuildDataService
             $sortDir = $sort = $request->request->get('sSortDir_'.$sortIndex);;
 
             //Gets the data
-            $results = $this->getRequiredDTData($start, $length, $sortColname, $sortDir, $colSearch, $reflect, $otherConditions = null,is_null($singleSearch));
+            $result = $this->applyParameters($start, $length, $sortColname, $sortDir, $colSearch, $reflect,is_null($singleSearch));
 
-            $objects = $results["results"];
-            $total_objects_count = $repository->count([]);
-            $filtered_objects_count = $results["countResult"];
-
-            //Render twig to build the data in a json format
-            //also alows the user to modify how it will look in the front-end
-            $twigresponse = $this->twig->render(
-                $this->template,
-                array('input'=>$objects,'properties' => $colName)
-            );
-
-            $response = '{
-            "recordsTotal": ' . $total_objects_count . ',
-            "recordsFiltered": ' . $filtered_objects_count . ',
-            "data": ' . $twigresponse . '}';
-
-            $returnResponse = new JsonResponse();
-            $returnResponse->setJson($response);
-
-            return $returnResponse;
+            return $result;
         }else{
             throw new Exception('The service hasn\'t been set properly.');
         }
     }
 
-    private function getRequiredDTData($start, $length,$sortColname,$sortDir,$colSearch,ReflectionClass  $objectClass, $otherConditions = null,$isMultiSearch)
+    private function applyParameters($start, $length,$sortColname,$sortDir,$colSearch,ReflectionClass  $objectClass,$isMultiSearch)
     {
         //Get all the properties to loop through
         $classProperties = $objectClass->getProperties();
 
-        //Initiliasing two querryBuilders
+        //Initiliasing the querryBuilder
         $query = clone $this->qb;
-        $countQuery = clone $this->qb;
-
-        $countQuery->select('COUNT('.$this->className.')');
-
-
-        //Not impleted yet,
-        //Can add conditions that will be applied to all the searches
-        if ($otherConditions === null && $isMultiSearch) {
-
-            $query->where("1=1");
-            $countQuery->where("1=1");
-
-        } elseif($otherConditions !== null) {
-
-            $query->where($otherConditions);
-            $countQuery->where($otherConditions);
-
-        }
 
         //Loops the properties to apply the searches made by the the user to the queryBuilder
         foreach ($classProperties as $property)
@@ -165,12 +127,10 @@ class BuildDataService
                     if($isMultiSearch) {
 
                         $query->andWhere($searchQuery);
-                        $countQuery->andWhere($searchQuery);
 
                     }else{
 
                         $query->orWhere($searchQuery);
-                        $countQuery->orWhere($searchQuery);
 
                     }
                 }
@@ -184,13 +144,44 @@ class BuildDataService
             $query->orderBy($this->className.".".$sortColname, $sortDir);
         }
 
+        return $query;
+    }
+
+    /**
+     * @param QueryBuilder $query your finalized query
+     * @return mixed Returns the data in a json format
+     */
+    public function renderData($query)
+    {
+        //Gets the objects's repository
+        $repository = $this->em->getRepository($this->object);
+
+        //Remove the parameters that we dont need
+        $countQuery = clone $query;
+        $countQuery->resetDQLPart('orderBy');
+        $countQuery->setFirstResult(0);
+		$countQuery->setMaxResults(null);
+        $countQuery->select('COUNT('.$this->className.')');
+		
         $results = $query->getQuery()->getResult();
         $countResult = $countQuery->getQuery()->getSingleScalarResult();
 
-        return array(
-            "results" => $results,
-            "countResult" => $countResult
+        $total_objects_count = $repository->count([]);
+
+        //Render twig to build the data in a json format
+        //also alows the user to modify how it will look in the front-end
+        $twigresponse = $this->twig->render(
+            $this->template,
+            array('input'=>$results,'properties' => $this->colName)
         );
+
+        $response = '{
+            "recordsTotal": ' . $total_objects_count . ',
+            "recordsFiltered": ' . $countResult . ',
+            "data": ' . $twigresponse . '}';
+
+        return $response;
+
     }
 
 }
