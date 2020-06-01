@@ -197,7 +197,7 @@ Heres how your two functions should look like in the end :
 	
 	// ...
 	
-	Modify the query here
+	# Modify the query here
 	
 	// ...
 
