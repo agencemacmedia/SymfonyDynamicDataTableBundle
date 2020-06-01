@@ -194,10 +194,18 @@ Heres how your two functions should look like in the end :
         $serviceDT = $this->get("amm_symfony_dynamic_data_table.builddataservice");
 
         $serviceDT->set(Advert::class,Advert::DATATABLE_Edit);
+	
+	// ...
+	
+	Modify the query here
+	
+	// ...
 
-        $returnResponse = $serviceDT->getDataTableFormatedData($request);
+        $returnResponse = new JsonResponse();
 
-        return $returnResponse;
+        $returnResponse->setJson($serviceDT->renderData($query));	# here the json of the response
+									# is directly the return of 
+        return $returnResponse;						# the service
     }
 ```
 
