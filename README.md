@@ -94,7 +94,7 @@ Exemple of how the whole script should look like:
             "columnDefs":[
     			{"name": "title", "targets": 0},        # Here set all the columns 
     			{"name": "author", "targets": 1},       # that are in the DataTable	
-    			{"name": "date", "targets": 2},		    # With an index that represents	
+    			{"name": "date", "targets": 2},		# With an index that represents	
     			{"name": "published", "targets": 3}     # the column's position.
     			],                                     
     			"paging": true,
@@ -135,11 +135,11 @@ Ex:
         {% for key, property in properties %}
 
             {% if property == 'title' %}		# Only need to adapt the if else
-												# to the current DataTable's content.
+							# to the current DataTable's content.
                 {% set obj = obj|merge([('
                                                 # Html/Css formating can be applied
                     <h1 class="test">%s</h1>	# here , %s represents where the data
-												# will appear.
+						# will appear.
                 ')|format(data.title)
                 ]) %}
 
