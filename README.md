@@ -74,21 +74,58 @@ You'll also need a script that:
     - __For a multi searchbar : configDataTableMultiSearch__
 
 Here is the needed parameters for these functions:
-- __For both__ the single and the multi search you need to pass the table object created in your script.
-- __For the multi search__ you also need to pass some optional parameters. Heres all the parameters possible:
-    - Class  : will apply a class to all the inputs for css formating.
+- __Single Search__ : the only needed parameter is the table created just before.
+- __Multi Search__ for the multi search you'll need an array of parameters:
+    - __Table__  : the only __required__ parameter is the table created just before.
+    - Dropdowns : this parameter is an associative array with the __name__ of the column and the value possible , the ones that are going to be the options.
+    - Classes : the classes parameter is an assosiative array of two main categories specific and global:
+        - Specific : is an associative array with the key being either the name of the column or it's index defined in the columnDefs section of the datatable with an array of the class(es)
+        - Global : is an associative array with the key being 'all' and an array of the class(es) __these classes will be applied to all the inputs__
+
+The data for the dropdown's option will come from your controller so you need to get the data from it and put in a variable accessible in the javascript configuration file. Ex:
+
+```php
+#Controller part
+public function indexAction()
+{
+    $valuesDD = [
+        "author"=>["Simon","fx","dom"]
+    ];
+    return $this->render('OCPlatformBundle:Advert:datatable.html.twig', ["dropdowns"=>$valuesDD]);
+}
+```
+```javascript
+#in the script before initializing the datatable
+var dropdowns = JSON.parse('{{ dropdowns|json_encode|raw }}');
+```
 
 Exemple on how to use the parameters:
 ```javascript
-configDataTableMultiSearch(table,[["class","yourCssClass"]]);
+configDataTableMultiSearch({
+        "table": table,
+        "dropdowns": dropdowns,
+        "classes": {
+            "specific": {
+                "author": ["testAuthor"],
+                2: ["testDate"]
+            },
+            "global": {
+                "all": ["testAll1", "testAll2"],
+                "dropdown": ["testDropdown"]
+            }
+        }
+    }
+);
 ```
     
 
 Exemple of how the whole script should look like:
 ```html
 <script type="text/javascript" charset="utf8">
+    var dropdowns = JSON.parse('{{ dropdowns|json_encode|raw }}');
+    var datatableurl = "{{ path('get_advert_datatables') }}";
+    
     $(document).ready(function () {
-        var datatableurl = "{{ path('Your_datatable_fetch_data') }}";
     
         var table = $('#YourId_dt_table').DataTable({
             "columnDefs":[
@@ -118,6 +155,8 @@ Exemple of how the whole script should look like:
 
 </script>
 ```
+
+In this exemple the script is in the same file has the basic table but you can feel free to have a separate script for it.
 				
 ### Make your view twig that applies your format
 	
@@ -212,14 +251,14 @@ Heres how your two functions should look like in the end :
     }
 ```
 
-**Here's the parameters that are required by the service :**
+**Here are the parameters that are required by the service :**
 
 - The class of the object you're using (in this case Advert::class)
 - The path to the twig view that formats the data (the second view we created)
     For this twig view we recommend having a public variable in your Class that references the path
     Ex:
     ```php
-        const DATATABLE_Edit = 'YourNameSpace:Advert/DATATABLE_TEMPLATES:dataFormating.html.twig';
+    const DATATABLE_Edit = 'YourNameSpace:Advert/DATATABLE_TEMPLATES:dataFormating.html.twig';
     ```
 You can send the response you get from the service back directly to the DataTable.
 

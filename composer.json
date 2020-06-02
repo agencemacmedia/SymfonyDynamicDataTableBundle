@@ -1,5 +1,5 @@
 {
-    "name": "amm/symfony-dynamic-datatable-bundle",
+    "name": "AMM/SymfonyDynamicDataTableBundle",
     "license": "GPL-2.0-only",
     "version": "0.0.1",
     "type": "symfony-bundle",

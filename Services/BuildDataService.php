@@ -43,6 +43,7 @@ class BuildDataService
             $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->className);
         }
     }
+
     /**
      * @param Request $request The request sent by your DataTable
      * @return QueryBuilder Returns a query on which you can add parameters
@@ -93,7 +94,7 @@ class BuildDataService
             $sortDir = $sort = $request->request->get('sSortDir_'.$sortIndex);;
 
             //Gets the data
-            $result = $this->applyParameters($start, $length, $sortColname, $sortDir, $colSearch, $reflect,is_null($singleSearch));
+            $result = $this->applyParameters($start, $length, $sortColname, $sortDir, $colSearch, $reflect,$singleSearch=="");
 
             return $result;
         }else{
