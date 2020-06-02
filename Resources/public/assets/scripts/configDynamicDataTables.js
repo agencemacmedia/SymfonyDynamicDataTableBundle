@@ -129,7 +129,7 @@ $.fn.dataTable.Api.register('clearPipeline()', function () {
 
 //Receives the table as is
 function configDataTableMultiSearch(settings) {
-
+    var dropdowns = [];
     //Check to see if the table (only required setting) is there
     if (typeof settings != 'undefined' && settings != null) {
         var table;
@@ -139,12 +139,10 @@ function configDataTableMultiSearch(settings) {
             return;
         }
         //Gets the input to change into dropdowns if there are any
-        var dropdowns;
         if (typeof settings.dropdowns !== 'undefined' && settings.dropdowns != null) {
             dropdowns = settings.dropdowns;
         }
-    }else
-    {
+    } else {
         return;
     }
     //gets the tableID
@@ -181,8 +179,8 @@ function configDataTableMultiSearch(settings) {
     $('#' + tableId + ' tfoot th').each(function () {
         var title = $(this).text();
         var isDropDown = false;
-        if (typeof dropdowns !== 'undefined') {
 
+        if (cols[pos - 1] in dropdowns) {
             //Gets the classes for this column
             var ddParam = globalClasses + " ";
             for (var i = 0; i < ddClasses.length; i++) {
@@ -196,22 +194,19 @@ function configDataTableMultiSearch(settings) {
             }
             ddParam = ddParam.trim();
 
-            if (cols[pos - 1] in dropdowns) {
-                if (ddParam !== "") {
-                    $(this).html("<select id='" + tableId + "_input_" + pos + "' class='" + ddParam + "' style='font-family:Arial, FontAwesome; width:100%'> </select>");
-                } else {
-                    $(this).html("<select id='" + tableId + "_input_" + pos + "' class='form-control' style='font-family:Arial, FontAwesome; width:100%'> </select>");
-                }
-                var options = dropdowns[cols[pos - 1]];
-                $("#" + tableId + "_input_" + pos).append("<option value='' selected ></option>");
-                for (var i = 0; i < options.length; i++) {
-                    $("#" + tableId + "_input_" + pos).append("<option value='" + options[i] + "'>" + options[i] + "</option>");
-                }
-
-                isDropDown = true;
+            if (ddParam !== "") {
+                $(this).html("<select id='" + tableId + "_input_" + pos + "' class='" + ddParam + "' style='font-family:Arial, FontAwesome; width:100%'> </select>");
+            } else {
+                $(this).html("<select id='" + tableId + "_input_" + pos + "' class='form-control' style='font-family:Arial, FontAwesome; width:100%'> </select>");
             }
-        }
-        if (!isDropDown) {
+            var options = dropdowns[cols[pos - 1]];
+            $("#" + tableId + "_input_" + pos).append("<option value='' selected ></option>");
+            for (var i = 0; i < options.length; i++) {
+                $("#" + tableId + "_input_" + pos).append("<option value='" + options[i] + "'>" + options[i] + "</option>");
+            }
+
+            isDropDown = true;
+        } else {
 
             //Gets the classes for this column
             var inputParam = globalClasses + " ";
@@ -247,7 +242,7 @@ function configDataTableMultiSearch(settings) {
 
             });
         } else {
-            $("#" + tableId + "_input_" + pos).change(function () {
+            $("#" + tableId + "_input_" + pos ).change(function () {
                 searchTimeoutMulti(that, this);
             });
         }
@@ -294,3 +289,5 @@ function configDataTableSingleSearch(table) {
     });
 
 }
+
+

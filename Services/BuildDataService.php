@@ -21,7 +21,7 @@ class BuildDataService
     private $qb;
     private $className;
 
-    public function __construct($twig,EntityManagerInterface $em)
+    public function __construct($twig, EntityManagerInterface $em)
     {
         $this->twig = $twig;
         $this->em = $em;
@@ -31,16 +31,29 @@ class BuildDataService
     /**
      * @param string $object Namespace of the object
      * @param string $template Path to twig template for HTML formating of your data (see template.html.twig for exemple)
+     * @param string $columns all the columns in the datatables
      */
-    public function set(string $object,string $template)
+    public function set(string $object, string $template, string $columns)
     {
         $obj = new $object;
-        $objName = explode("\\" ,get_class($obj));
-        if(is_object($obj)) {
+        $objName = explode("\\", get_class($obj));
+        if (is_object($obj)) {
             $this->object = $object;
             $this->template = $template;
-            $this->className = strtolower($objName[count($objName)-1]);
+            $this->className = strtolower($objName[count($objName) - 1]);
             $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->className);
+            $columnSplit = explode(",", $columns);
+            for ($i = 0; $i < count($columnSplit); $i++) {
+                $col = explode(".", $columnSplit[$i]);
+                if (count($col) > 1) {
+                    $this->qb->leftJoin($this->className . "." . $col[0], $col[0])
+                        ->addSelect($col[0]);
+                    for ($x = 1 ; $x < count($col)-1 ; $x++) {
+                        $this->qb->leftJoin($col[$x-1] . "." . $col[$x], $col[$x])
+                            ->addSelect($col[$x]);
+                    }
+                }
+            }
         }
     }
 
@@ -51,8 +64,7 @@ class BuildDataService
     public function getBasicQuery(Request $request)
     {
         //Check to see if the set has been made
-        if($this->object !== null && $this->template !== null&& $this->em !== null && $this->qb !== null)
-        {
+        if ($this->object !== null && $this->template !== null && $this->em !== null && $this->qb !== null) {
             //Builds a reflection class to list all properties
             $reflect = new ReflectionClass($this->object);
 
@@ -68,18 +80,17 @@ class BuildDataService
             //Array with all the columns currently in the DataTable
             $colName = explode(',', $columns);
             $this->colName = $colName;
-            $colSearch =[];
+            $colSearch = [];
 
             //Check to see if single search or multisearch
-            if($singleSearch)
-            {
+            if ($singleSearch) {
                 //Applies the search to all the columns
                 $i = 0;
                 foreach ($colName as $col) {
                     array_push($colSearch, [$col, $singleSearch]);
                     $i++;
                 }
-            }else {
+            } else {
                 //Gets the searching parameters from all the search bars
                 $i = 0;
                 foreach ($colName as $col) {
@@ -91,18 +102,18 @@ class BuildDataService
             //Checks all the colomns to see by which one it is sorted and then gets the direction
             $sortIndex = intval($sortCol) - 1;
             $sortColname = $colName[$sortIndex];
-            $sortDir = $sort = $request->request->get('sSortDir_'.$sortIndex);;
+            $sortDir = $sort = $request->request->get('sSortDir_' . $sortIndex);;
 
             //Gets the data
-            $result = $this->applyParameters($start, $length, $sortColname, $sortDir, $colSearch, $reflect,$singleSearch=="");
+            $result = $this->applyParameters($start, $length, $sortColname, $sortDir, $colSearch, $reflect, $singleSearch == "");
 
             return $result;
-        }else{
+        } else {
             throw new Exception('The service hasn\'t been set properly.');
         }
     }
 
-    private function applyParameters($start, $length,$sortColname,$sortDir,$colSearch,ReflectionClass  $objectClass,$isMultiSearch)
+    private function applyParameters($start, $length, $sortColname, $sortDir, $colSearch, ReflectionClass $objectClass, $isMultiSearch)
     {
         //Get all the properties to loop through
         $classProperties = $objectClass->getProperties();
@@ -111,29 +122,25 @@ class BuildDataService
         $query = clone $this->qb;
 
         //Loops the properties to apply the searches made by the the user to the queryBuilder
-        foreach ($classProperties as $property)
-        {
-            foreach ($colSearch as $key => $column)
+        foreach ($colSearch as $key => $column) {
+            $searchQuery = null;
+            $colSplit = explode(".", $column[0]);
+            if ($column[1] !== "" && count( $colSplit) ===1) {
+                $searchQuery = $this->className . "." . $column[0] . ' LIKE \'%' . $column[1] . '%\'';
+            }else if($column[1] !== "")
             {
-                $searchQuery = null;
-                if($column[0] === $property->getName())
-                {
-                    if($column[1]!== "")
-                    {
-                        $searchQuery = $this->className ."." .$property->getName() . ' LIKE \'%' .$column[1] .'%\'';
-                    }
-                }
-                if ($searchQuery !== null) {
+                $searchQuery = $column[0] . ' LIKE \'%' . $column[1] . '%\'';
+            }
+            if ($searchQuery !== null) {
 
-                    if($isMultiSearch) {
+                if ($isMultiSearch) {
 
-                        $query->andWhere($searchQuery);
+                    $query->andWhere($searchQuery);
 
-                    }else{
+                } else {
 
-                        $query->orWhere($searchQuery);
+                    $query->orWhere($searchQuery);
 
-                    }
                 }
             }
         }
@@ -142,7 +149,7 @@ class BuildDataService
         $query->setFirstResult($start)->setMaxResults($length);
 
         if ($sortDir !== null && $sortColname !== null) {
-            $query->orderBy($this->className.".".$sortColname, $sortDir);
+            $query->orderBy($this->className . "." . $sortColname, $sortDir);
         }
 
         return $query;
@@ -161,9 +168,9 @@ class BuildDataService
         $countQuery = clone $query;
         $countQuery->resetDQLPart('orderBy');
         $countQuery->setFirstResult(0);
-		$countQuery->setMaxResults(null);
-        $countQuery->select('COUNT('.$this->className.')');
-		
+        $countQuery->setMaxResults(null);
+        $countQuery->select('COUNT(' . $this->className . ')');
+
         $results = $query->getQuery()->getResult();
         $countResult = $countQuery->getQuery()->getSingleScalarResult();
 
@@ -173,7 +180,7 @@ class BuildDataService
         //also alows the user to modify how it will look in the front-end
         $twigresponse = $this->twig->render(
             $this->template,
-            array('input'=>$results,'properties' => $this->colName)
+            array('input' => $results, 'properties' => $this->colName)
         );
 
         $response = '{
