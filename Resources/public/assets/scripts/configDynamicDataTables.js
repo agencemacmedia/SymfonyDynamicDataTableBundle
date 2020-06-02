@@ -130,6 +130,7 @@ $.fn.dataTable.Api.register('clearPipeline()', function () {
 //Receives the table as is
 function configDataTableMultiSearch(settings) {
 
+    //Check to see if the table (only required setting) is there
     if (typeof settings != 'undefined' && settings != null) {
         var table;
         if (typeof settings.table !== 'undefined' && settings.table != null) {
@@ -137,6 +138,7 @@ function configDataTableMultiSearch(settings) {
         } else {
             return;
         }
+        //Gets the input to change into dropdowns if there are any
         var dropdowns;
         if (typeof settings.dropdowns !== 'undefined' && settings.dropdowns != null) {
             dropdowns = settings.dropdowns;
@@ -147,12 +149,14 @@ function configDataTableMultiSearch(settings) {
     }
     //gets the tableID
     var tableId = table.table().node().id;
+    //Remove the display of the single search bar and places the new input on top
     $('#' + tableId + ' tfoot').css('display', 'table-header-group');
     $('#' + tableId + '_wrapper .dataTables_filter').css('display', 'none');
 
     var specificClasses = [];
     var ddClasses = [];
     var globalClasses = "";
+    //Here gets the global classes if there are any
     if (typeof settings.classes !== 'undefined' && settings.classes != null) {
         if (typeof settings.classes.specific !== 'undefined') {
             specificClasses = settings.classes.specific;
