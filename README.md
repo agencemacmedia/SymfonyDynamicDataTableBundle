@@ -32,9 +32,7 @@ This bundle has been developped and tested in Symfony 3.4 and using PHP 7.1.33
 
 ### Make your Twig view containing your DataTable
 
-First of all you need to construct your DataTable structure normally.
-
-It also needs a specific id.
+First of all you need to have a basic table that is assigned a unique id.
 
 Ex:
 
@@ -74,10 +72,10 @@ You'll also need a script that:
     - __For a multi searchbar : configDataTableMultiSearch__
 
 Here is the needed parameters for these functions:
-- __Single Search__ : the only needed parameter is the table created just before.
+- __Single Search__ : the only __required__ parameter is the table created just before.
 - __Multi Search__ for the multi search you'll need an array of parameters:
     - __Table__  : the only __required__ parameter is the table created just before.
-    - Dropdowns : this parameter is an associative array with the __name__ of the column and the value possible , the ones that are going to be the options.
+    - Dropdowns : this parameter is an associative array with the __name__ of the column and an array of the values , the ones that are going to be the options.
     - Classes : the classes parameter is an assosiative array of two main categories specific and global:
         - Specific : is an associative array with the key being either the name of the column or it's index defined in the columnDefs section of the datatable with an array of the class(es)
         - Global : is an associative array with the key being 'all' and an array of the class(es) __these classes will be applied to all the inputs__
@@ -215,11 +213,21 @@ Ex:
 		
 The only two controller functions that you need are :
 
-- One to load your view.
+- One to load your view and if you're using dropdowns initialize the dropdowns data.
 - One that will fetch and return the data requested by the DataTable.
-    - It is also possible to add your parameters to the query before the final render
+    - It is also possible to add parameters to the query before the final render
 					
 The last function needs to create a BuildDataService service __and set his parameters__.
+
+**Here are the parameters that are required by the service :**
+
+- The class of the object you're using (in this case Advert::class)
+- The path to the twig view that formats the data (the second view we created)
+    For this twig view we recommend having a public variable in your Class that references the path
+    Ex:
+    ```php
+    const DATATABLE_Edit = 'YourNameSpace:Advert/DATATABLE_TEMPLATES:dataFormating.html.twig';
+    ```
 
 Heres how your two functions should look like in the end :
 ```php
@@ -228,7 +236,7 @@ Heres how your two functions should look like in the end :
         return $this->render('TestBundle:Default:index.html.twig');
     }
 
-    public function getTestTableAction(Request $request)
+    public function getAdvertDataTableAction(Request $request)
     {
 
         $serviceDT = $this->get("amm_symfony_dynamic_data_table.builddataservice");
@@ -251,15 +259,6 @@ Heres how your two functions should look like in the end :
     }
 ```
 
-**Here are the parameters that are required by the service :**
-
-- The class of the object you're using (in this case Advert::class)
-- The path to the twig view that formats the data (the second view we created)
-    For this twig view we recommend having a public variable in your Class that references the path
-    Ex:
-    ```php
-    const DATATABLE_Edit = 'YourNameSpace:Advert/DATATABLE_TEMPLATES:dataFormating.html.twig';
-    ```
 You can send the response you get from the service back directly to the DataTable.
 
 And that's pretty much all for the controller part and how to use the Bundle!
