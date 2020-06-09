@@ -222,13 +222,12 @@ The last function needs to create a BuildDataService service __and set his param
 **Here are the parameters that are required by the service :**
 
 - The class of the object you're using (in this case Advert::class)
-- The path to the twig view that formats the data (the second view we created)
-    For this twig view we recommend having a public variable in your Class that references the path
+- The path to the twig view that formats the data (the second view we created).For this twig view we recommend having a public variable in your Class that references the path
     Ex:
     ```php
     const DATATABLE_Edit = 'YourNameSpace:Advert/DATATABLE_TEMPLATES:dataFormating.html.twig';
     ```
-- The columns currently in datatable, you can get them directly from the request
+- The columns currently in your datatable, you can get them directly from the request
 
 Heres how your two functions should look like in the end :
 ```php
