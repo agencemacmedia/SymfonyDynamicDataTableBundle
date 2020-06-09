@@ -130,9 +130,9 @@ $.fn.dataTable.Api.register('clearPipeline()', function () {
 //Receives the table as is
 function configDataTableMultiSearch(settings) {
     var dropdowns = [];
+    var table;
     //Check to see if the table (only required setting) is there
     if (typeof settings != 'undefined' && settings != null) {
-        var table;
         if (typeof settings.table !== 'undefined' && settings.table != null) {
             table = settings.table;
         } else {
@@ -289,5 +289,3 @@ function configDataTableSingleSearch(table) {
     });
 
 }
-
-

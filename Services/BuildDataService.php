@@ -7,7 +7,6 @@ namespace AMM\SymfonyDynamicDataTableBundle\Services;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Exception;
-use OC\PlatformBundle\Entity\Advert;
 use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\Controller\ControllerTrait;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -43,14 +42,29 @@ class BuildDataService
             $this->className = strtolower($objName[count($objName) - 1]);
             $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->className);
             $columnSplit = explode(",", $columns);
+            $joined = [];
+
+            //Adds all the left join necessery
             for ($i = 0; $i < count($columnSplit); $i++) {
+
                 $col = explode(".", $columnSplit[$i]);
+
                 if (count($col) > 1) {
-                    $this->qb->leftJoin($this->className . "." . $col[0], $col[0])
-                        ->addSelect($col[0]);
-                    for ($x = 1 ; $x < count($col)-1 ; $x++) {
-                        $this->qb->leftJoin($col[$x-1] . "." . $col[$x], $col[$x])
-                            ->addSelect($col[$x]);
+
+                    if (!in_array($this->className, $joined)) {
+                        $this->qb->leftJoin($this->className . "." . $col[0], $col[0])
+                            ->addSelect($col[0]);
+                        array_push($joined, $this->className);
+                    }
+
+                    for ($x = 1; $x < count($col) - 1; $x++) {
+
+                        if (!in_array($col[$x - 1], $joined)) {
+                            $this->qb->leftJoin($col[$x - 1] . "." . $col[$x], $col[$x])
+                                ->addSelect($col[$x]);
+                            array_push($joined, $col[$x - 1]);
+                        }
+
                     }
                 }
             }
@@ -125,10 +139,9 @@ class BuildDataService
         foreach ($colSearch as $key => $column) {
             $searchQuery = null;
             $colSplit = explode(".", $column[0]);
-            if ($column[1] !== "" && count( $colSplit) ===1) {
+            if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
                 $searchQuery = $this->className . "." . $column[0] . ' LIKE \'%' . $column[1] . '%\'';
-            }else if($column[1] !== "")
-            {
+            } else if ($column[1] !== "" && $column[0] !== "") {
                 $searchQuery = $column[0] . ' LIKE \'%' . $column[1] . '%\'';
             }
             if ($searchQuery !== null) {
@@ -149,7 +162,11 @@ class BuildDataService
         $query->setFirstResult($start)->setMaxResults($length);
 
         if ($sortDir !== null && $sortColname !== null) {
-            $query->orderBy($this->className . "." . $sortColname, $sortDir);
+            if (count(explode(".", $sortColname)) > 1) {
+                $query->orderBy($sortColname, $sortDir);
+            } else {
+                $query->orderBy($this->className . "." . $sortColname, $sortDir);
+            }
         }
 
         return $query;
@@ -169,12 +186,10 @@ class BuildDataService
         $countQuery->resetDQLPart('orderBy');
         $countQuery->setFirstResult(0);
         $countQuery->setMaxResults(null);
-        $countQuery->select('COUNT(' . $this->className . ')');
+        $countQuery->select('COUNT(' . $this->className . '.id)');
 
         $results = $query->getQuery()->getResult();
         $countResult = $countQuery->getQuery()->getSingleScalarResult();
-
-        $total_objects_count = $repository->count([]);
 
         //Render twig to build the data in a json format
         //also alows the user to modify how it will look in the front-end
@@ -184,7 +199,6 @@ class BuildDataService
         );
 
         $response = '{
-            "recordsTotal": ' . $total_objects_count . ',
             "recordsFiltered": ' . $countResult . ',
             "data": ' . $twigresponse . '}';
 

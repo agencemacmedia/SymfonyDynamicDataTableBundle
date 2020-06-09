@@ -144,11 +144,11 @@ Exemple of how the whole script should look like:
     				"type": "POST"
     			},
     			"fnServerData": fnDataTablesPipeline,
-    			"order": [[0, 'asc']]
+    			"order": [[0, 'asc']],
+    			initComplete: function () {
+                     configDataTableSingleSearch(table);	# Config function (Multi or Single Search)
+                 });                                        # in the initComplete function of the DataTable
     		});
-    		
-	    configDataTableSingleSearch(table);		# Config function (Multi or Single Search)
-	    
 	});
 
 </script>
@@ -228,6 +228,7 @@ The last function needs to create a BuildDataService service __and set his param
     ```php
     const DATATABLE_Edit = 'YourNameSpace:Advert/DATATABLE_TEMPLATES:dataFormating.html.twig';
     ```
+- The columns currently in datatable, you can get them directly from the request
 
 Heres how your two functions should look like in the end :
 ```php
@@ -241,7 +242,7 @@ Heres how your two functions should look like in the end :
 
         $serviceDT = $this->get("amm_symfony_dynamic_data_table.builddataservice");
 
-        $serviceDT->set(Advert::class,Advert::DATATABLE_Edit);
+        $serviceDT->set(Advert::class,Advert::DATATABLE_Edit,$request->request->get("sColumns"));
 	
 	$query = $serviceDT->getBasicQuery($request);
 	
