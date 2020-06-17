@@ -30,7 +30,7 @@ function fnGetKey(aoData, sKey) {
 //checks if it already has the data cached if it has, loads the data from the cache
 //else makes a new request for the next data set
 
-function fnDataTablesPipeline(sSource, aoData, fnCallback) {
+function fnDataTablesPipeline(sSource, aoData, fnCallback,settings) {
 
     //Variable initialisation
 
@@ -45,7 +45,11 @@ function fnDataTablesPipeline(sSource, aoData, fnCallback) {
 
     //Checks to see if the lower limit is still at the default or if the new request start is under or over the
     //lower limit if yes it means that we need a new request
-
+    if ( settings.clearCache ) {
+        // API requested that the cache be cleared
+        bNeedServer = true;
+        settings.clearCache = false;
+    }
     if (oCache.iCacheLower < 0 || iRequestStart < oCache.iCacheLower || iRequestEnd > oCache.iCacheUpper) {
         bNeedServer = true;
     }
