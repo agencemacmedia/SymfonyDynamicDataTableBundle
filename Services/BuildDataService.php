@@ -19,6 +19,7 @@ class BuildDataService
     private $em;
     private $qb;
     private $className;
+    private $renders = null;
 
     public function __construct($twig, EntityManagerInterface $em)
     {
@@ -32,8 +33,11 @@ class BuildDataService
      * @param string $template Path to twig template for HTML formating of your data (see template.html.twig for exemple)
      * @param string $columns all the columns in the datatables
      */
-    public function set(string $object, string $template, string $columns)
+    public function set(string $object, string $template, string $columns, $renders = null)
     {
+        if ($renders != null)
+            $this->renders = $renders;
+
         $obj = new $object;
         $objName = explode("\\", get_class($obj));
         if (is_object($obj)) {
@@ -193,10 +197,26 @@ class BuildDataService
 
         //Render twig to build the data in a json format
         //also alows the user to modify how it will look in the front-end
-        $twigresponse = $this->twig->render(
-            $this->template,
-            array('input' => $results, 'properties' => $this->colName)
-        );
+        if ($this->renders != null) {
+
+            $properties = array('input' => $results, 'properties' => $this->colName);
+
+            foreach ($this->renders as $key => $value)
+            {
+                $properties[$key]=$value;
+            }
+
+            $twigresponse = $this->twig->render(
+                $this->template,
+                $properties
+            );
+
+        } else {
+            $twigresponse = $this->twig->render(
+                $this->template,
+                array('input' => $results, 'properties' => $this->colName)
+            );
+        }
 
         $response = '{
             "recordsFiltered": ' . $countResult . ',
