@@ -131,33 +131,48 @@ class BuildDataService
         }
     }
 
+
     private function applyParameters($start, $length, $sortColname, $sortDir, $colSearch, ReflectionClass $objectClass, $isMultiSearch)
     {
         //Get all the properties to loop through
         $classProperties = $objectClass->getProperties();
+        $classProp = [];
+
+        foreach ($classProperties as $property)
+        {
+            array_push($classProp,$property->name);
+        }
+
 
         //Initiliasing the querryBuilder
+        /**
+         * @var $query QueryBuilder\
+         */
         $query = clone $this->qb;
 
         //Loops the properties to apply the searches made by the the user to the queryBuilder
         foreach ($colSearch as $key => $column) {
-            $searchQuery = null;
-            $colSplit = explode(".", $column[0]);
-            if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
-                $searchQuery = $this->className . "." . $column[0] . ' LIKE \'%' . $column[1] . '%\'';
-            } else if ($column[1] !== "" && $column[0] !== "") {
-                $searchQuery = $column[0] . ' LIKE \'%' . $column[1] . '%\'';
-            }
-            if ($searchQuery !== null) {
+            if(in_array($column[0],$classProp)) {
+                $searchQuery = null;
+                $colSplit = explode(".", $column[0]);
+                if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
+                    $searchQuery = $this->className . "." . $column[0] . ' LIKE \'%:search%\'';
+                } else if ($column[1] !== "" && $column[0] !== "") {
+                    $searchQuery = $column[0] . ' LIKE \'%:search%\'';
+                }
+                if ($searchQuery !== null) {
 
-                if ($isMultiSearch) {
+                    if ($isMultiSearch) {
 
-                    $query->andWhere($searchQuery);
+                        $query->andWhere($searchQuery)
+                        ->setParameter("search", $column[1]);
 
-                } else {
+                    } else {
 
-                    $query->orWhere($searchQuery);
+                        $query->orWhere($searchQuery)
+                            ->setParameter("search", $column[1]);
 
+                    }
                 }
             }
         }
@@ -165,7 +180,7 @@ class BuildDataService
         //Only gets the needed number of data
         $query->setFirstResult($start)->setMaxResults($length);
 
-        if ($sortDir !== null && $sortColname !== null) {
+        if ($sortDir !== null && $sortColname !== null && in_array($sortColname,$classProp)) {
             if (count(explode(".", $sortColname)) > 1) {
                 $query->orderBy($sortColname, $sortDir);
             } else {
