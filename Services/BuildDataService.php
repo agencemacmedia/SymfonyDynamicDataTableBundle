@@ -149,31 +149,32 @@ class BuildDataService
          * @var $query QueryBuilder\
          */
         $query = clone $this->qb;
-
+        $searchIndex = 0;
         //Loops the properties to apply the searches made by the the user to the queryBuilder
         foreach ($colSearch as $key => $column) {
             if(in_array($column[0],$classProp)) {
                 $searchQuery = null;
                 $colSplit = explode(".", $column[0]);
                 if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
-                    $searchQuery = $this->className . "." . $column[0] . ' LIKE \'%:search%\'';
+                    $searchQuery = $this->className . "." . $column[0] . ' LIKE :search'.$searchIndex;
                 } else if ($column[1] !== "" && $column[0] !== "") {
-                    $searchQuery = $column[0] . ' LIKE \'%:search%\'';
+                    $searchQuery = $column[0] . ' LIKE :search'.$searchIndex;
                 }
                 if ($searchQuery !== null) {
 
                     if ($isMultiSearch) {
 
                         $query->andWhere($searchQuery)
-                        ->setParameter("search", $column[1]);
+                            ->setParameter("search".$searchIndex, '%'.$column[1].'%');
 
                     } else {
 
                         $query->orWhere($searchQuery)
-                            ->setParameter("search", $column[1]);
+                            ->setParameter("search".$searchIndex, '%'.$column[1].'%');
 
                     }
                 }
+                $searchIndex++;
             }
         }
 
