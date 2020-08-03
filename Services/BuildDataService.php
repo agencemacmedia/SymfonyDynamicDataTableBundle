@@ -18,7 +18,7 @@ class BuildDataService
     private $template;
     private $em;
     private $qb;
-    private $className;
+    private $alias;
     private $renders = null;
 
     public function __construct($twig, EntityManagerInterface $em)
@@ -43,8 +43,11 @@ class BuildDataService
         if (is_object($obj)) {
             $this->object = $object;
             $this->template = $template;
-            $this->className = strtolower($objName[count($objName) - 1]);
-            $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->className);
+            $this->alias = strtolower($objName[count($objName) - 1]);
+            if(method_exists($obj,"getAlias")){
+                $this->alias = $obj->getAlias();
+            }
+            $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->alias);
             $columnSplit = explode(",", $columns);
             $joined = [];
 
@@ -55,10 +58,10 @@ class BuildDataService
 
                 if (count($col) > 1) {
 
-                    if (!in_array($this->className, $joined)) {
-                        $this->qb->leftJoin($this->className . "." . $col[0], $col[0])
+                    if (!in_array($col[0], $joined)) {
+                        $this->qb->leftJoin($this->alias . "." . $col[0], $col[0])
                             ->addSelect($col[0]);
-                        array_push($joined, $this->className);
+                        array_push($joined, $col[0]);
                     }
 
                     for ($x = 1; $x < count($col) - 1; $x++) {
@@ -89,9 +92,10 @@ class BuildDataService
             if ($request->getMethod() == 'POST') {
                 $start = $request->request->get('iDisplayStart');
                 $length = $request->request->get('iDisplayLength');
-                $sortCol = $request->request->get('iSortingCols');
+                $sortCol = $request->request->get('iSortCol_0');
                 $columns = $request->request->get('sColumns');
                 $singleSearch = $request->request->get('sSearch');
+                $sortDir = $request->request->get("sSortDir_0");
             } else
                 throw new Exception('Invalid request received.');;
 
@@ -118,9 +122,9 @@ class BuildDataService
             }
 
             //Checks all the colomns to see by which one it is sorted and then gets the direction
-            $sortIndex = intval($sortCol) - 1;
-            $sortColname = $colName[$sortIndex];
-            $sortDir = $sort = $request->request->get('sSortDir_' . $sortIndex);;
+            $sortIndex = intval($sortCol);
+            $sortColname = $colName[$sortCol];
+//            $sortDir = $sort = $request->request->get('sSortDir_' . ($sortIndex+1));
 
             //Gets the data
             $result = $this->applyParameters($start, $length, $sortColname, $sortDir, $colSearch, $reflect, $singleSearch == "");
@@ -152,11 +156,11 @@ class BuildDataService
         $searchIndex = 0;
         //Loops the properties to apply the searches made by the the user to the queryBuilder
         foreach ($colSearch as $key => $column) {
-            if(in_array($column[0],$classProp)) {
+            if( count(explode(".", $column[0]))>1 || in_array($column[0],$classProp)) {
                 $searchQuery = null;
                 $colSplit = explode(".", $column[0]);
                 if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
-                    $searchQuery = $this->className . "." . $column[0] . ' LIKE :search'.$searchIndex;
+                    $searchQuery = $this->alias . "." . $column[0] . ' LIKE :search'.$searchIndex;
                 } else if ($column[1] !== "" && $column[0] !== "") {
                     $searchQuery = $column[0] . ' LIKE :search'.$searchIndex;
                 }
@@ -183,9 +187,9 @@ class BuildDataService
 
         if ($sortDir !== null && $sortColname !== null && in_array($sortColname,$classProp)) {
             if (count(explode(".", $sortColname)) > 1) {
-                $query->orderBy($sortColname, $sortDir);
+                $query->orderBy($sortColname , strtoupper( $sortDir));
             } else {
-                $query->orderBy($this->className . "." . $sortColname, $sortDir);
+                $query->orderBy($this->alias . "." . $sortColname, strtoupper( $sortDir));
             }
         }
 
@@ -206,7 +210,7 @@ class BuildDataService
         $countQuery->resetDQLPart('orderBy');
         $countQuery->setFirstResult(0);
         $countQuery->setMaxResults(null);
-        $countQuery->select('COUNT(' . $this->className . '.id)');
+        $countQuery->select('COUNT(' . $this->alias . '.id)');
 
         $results = $query->getQuery()->getResult();
         $countResult = $countQuery->getQuery()->getSingleScalarResult();
