@@ -44,7 +44,7 @@ class BuildDataService
             $this->object = $object;
             $this->template = $template;
             $this->alias = strtolower($objName[count($objName) - 1]);
-            if(method_exists($obj,"getAlias")){
+            if (method_exists($obj, "getAlias")) {
                 $this->alias = $obj->getAlias();
             }
             $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->alias);
@@ -65,12 +65,18 @@ class BuildDataService
                     }
 
                     for ($x = 1; $x < count($col) - 1; $x++) {
-
-                        if (!in_array($col[$x - 1], $joined)) {
-                            $this->qb->leftJoin($col[$x - 1] . "." . $col[$x], $col[$x])
-                                ->addSelect($col[$x]);
-                            array_push($joined, $col[$x - 1]);
+                        $suffix = $col[0] .".";
+                        for($y = 1; $y < $x; $y++) {
+                            $suffix .= $col[$y] . ".";
                         }
+
+
+                        if (!in_array($suffix .$col[$x], $joined)) {
+                            $this->qb->leftJoin($suffix . $col[$x], $col[$x])
+                                ->addSelect($col[$x]);
+                            array_push($joined, $suffix. $col[$x - 1]);
+                        }
+
 
                     }
                 }
@@ -142,9 +148,8 @@ class BuildDataService
         $classProperties = $objectClass->getProperties();
         $classProp = [];
 
-        foreach ($classProperties as $property)
-        {
-            array_push($classProp,$property->name);
+        foreach ($classProperties as $property) {
+            array_push($classProp, $property->name);
         }
 
 
@@ -156,25 +161,29 @@ class BuildDataService
         $searchIndex = 0;
         //Loops the properties to apply the searches made by the the user to the queryBuilder
         foreach ($colSearch as $key => $column) {
-            if( count(explode(".", $column[0]))>1 || in_array($column[0],$classProp)) {
+            if (count(explode(".", $column[0])) > 1 || in_array($column[0], $classProp)) {
+
                 $searchQuery = null;
                 $colSplit = explode(".", $column[0]);
+
                 if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
-                    $searchQuery = $this->alias . "." . $column[0] . ' LIKE :search'.$searchIndex;
+                    $searchQuery = $this->alias . "." . $column[0] . ' LIKE :search' . $searchIndex;
                 } else if ($column[1] !== "" && $column[0] !== "") {
-                    $searchQuery = $column[0] . ' LIKE :search'.$searchIndex;
+                    $searchAlias = $colSplit[count($colSplit)-2].".".$colSplit[count($colSplit)-1];
+                    $searchQuery = $searchAlias . ' LIKE :search' . $searchIndex;
                 }
+
                 if ($searchQuery !== null) {
 
                     if ($isMultiSearch) {
 
                         $query->andWhere($searchQuery)
-                            ->setParameter("search".$searchIndex, '%'.$column[1].'%');
+                            ->setParameter("search" . $searchIndex, '%' . $column[1] . '%');
 
                     } else {
 
                         $query->orWhere($searchQuery)
-                            ->setParameter("search".$searchIndex, '%'.$column[1].'%');
+                            ->setParameter("search" . $searchIndex, '%' . $column[1] . '%');
 
                     }
                 }
@@ -185,11 +194,11 @@ class BuildDataService
         //Only gets the needed number of data
         $query->setFirstResult($start)->setMaxResults($length);
 
-        if ($sortDir !== null && $sortColname !== null && in_array($sortColname,$classProp)) {
+        if ($sortDir !== null && $sortColname !== null && in_array($sortColname, $classProp)) {
             if (count(explode(".", $sortColname)) > 1) {
-                $query->orderBy($sortColname , strtoupper( $sortDir));
+                $query->orderBy($sortColname, strtoupper($sortDir));
             } else {
-                $query->orderBy($this->alias . "." . $sortColname, strtoupper( $sortDir));
+                $query->orderBy($this->alias . "." . $sortColname, strtoupper($sortDir));
             }
         }
 
@@ -221,9 +230,8 @@ class BuildDataService
 
             $properties = array('input' => $results, 'properties' => $this->colName);
 
-            foreach ($this->renders as $key => $value)
-            {
-                $properties[$key]=$value;
+            foreach ($this->renders as $key => $value) {
+                $properties[$key] = $value;
             }
 
             $twigresponse = $this->twig->render(
