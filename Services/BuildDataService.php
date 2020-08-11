@@ -18,6 +18,7 @@ class BuildDataService
     private $template;
     private $em;
     private $qb;
+    private $joined;
     private $alias;
     private $renders = null;
 
@@ -81,6 +82,7 @@ class BuildDataService
                     }
                 }
             }
+            $this->joined = $joined;
         }
     }
 
@@ -161,27 +163,53 @@ class BuildDataService
         $searchIndex = 0;
         //Loops the properties to apply the searches made by the the user to the queryBuilder
         foreach ($colSearch as $key => $column) {
+            //Check if the search parameter is searchable (is a property of the entity/sub-entity or is a dummy field
             if (count(explode(".", $column[0])) > 1 || in_array($column[0], $classProp)) {
 
                 $searchQuery = null;
                 $colSplit = explode(".", $column[0]);
+                $isConcat =false;
 
+                //Check if the search parameter is a property from the class or a sub-entity
                 if ($column[1] !== "" && $column[0] !== "" && count($colSplit) === 1) {
-                    $searchQuery = $this->alias . "." . $column[0] . ' LIKE :search' . $searchIndex;
+                    $prefix = $this->alias . "." . $column[0];
+                    if(count(explode("-",$column[0]))>1) {
+                        $isConcat = true;
+                        $strReplace = str_replace("-","",$column[0]);
+                        $properties = explode("-",$column[0]);
+                        $addSelect="CONCAT(";
+                        foreach ($properties as $prop){
+                            $addSelect .= $this->alias.".".$prop .",";
+                        }
+                        $addSelect = trim($prefix,",");
+                        $addSelect .= ")";
+                        $prefix = $addSelect;
+                    }
+                    $searchQuery = $prefix . ' LIKE :search' . $searchIndex;
                 } else if ($column[1] !== "" && $column[0] !== "") {
-                    $searchAlias = $colSplit[count($colSplit)-2].".".$colSplit[count($colSplit)-1];
-                    $searchQuery = $searchAlias . ' LIKE :search' . $searchIndex;
+
+                    $prefix = $colSplit[count($colSplit) - 2] . "." . $colSplit[count($colSplit) - 1];
+                    if(count(explode("-",$colSplit[count($colSplit) - 1]))>1) {
+                        $isConcat = true;
+                        $strReplace = str_replace("-","",$colSplit[count($colSplit) - 1]);
+                        $properties = explode("-",$colSplit[count($colSplit) - 1]);
+                        $addSelect="CONCAT(";
+                        for ($i =0;$i<count($properties);$i++){
+                            $addSelect .= $colSplit[count($colSplit) - 2]."." .$properties[$i].(($i === count($properties)-1)?"":",");
+                        }
+                        $addSelect .= ")";
+                        $prefix = $addSelect;
+                    }
+                    $searchQuery = $prefix . ' LIKE :search' . $searchIndex;
                 }
 
                 if ($searchQuery !== null) {
 
                     if ($isMultiSearch) {
-
                         $query->andWhere($searchQuery)
                             ->setParameter("search" . $searchIndex, '%' . $column[1] . '%');
 
                     } else {
-
                         $query->orWhere($searchQuery)
                             ->setParameter("search" . $searchIndex, '%' . $column[1] . '%');
 
@@ -193,8 +221,10 @@ class BuildDataService
 
         //Only gets the needed number of data
         $query->setFirstResult($start)->setMaxResults($length);
-
-        if ($sortDir !== null && $sortColname !== null && in_array($sortColname, $classProp)) {
+        $sortProp = explode(".",$sortColname);
+        if(count($sortProp)>1)
+            $sortProp = $sortProp[count($sortProp)-2];
+        if ($sortDir !== null && $sortProp !== null && (in_array($sortProp, $classProp) || in_array($sortColname,$classProp))) {
             if (count(explode(".", $sortColname)) > 1) {
                 $query->orderBy($sortColname, strtoupper($sortDir));
             } else {
