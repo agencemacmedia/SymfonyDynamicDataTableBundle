@@ -226,9 +226,15 @@ class BuildDataService
             $sortProp = $sortProp[count($sortProp)-2];
         if ($sortDir !== null && $sortProp !== null && (in_array($sortProp, $classProp) || in_array($sortColname,$classProp))) {
             if (count(explode(".", $sortColname)) > 1) {
-                $query->orderBy($sortColname, strtoupper($sortDir));
+                $sort=$sortColname;
+                if(count(explode("-",$sortColname))>1)
+                    $sort = explode("-",$sortColname)[0];
+                $query->orderBy($sort, strtoupper($sortDir));
             } else {
-                $query->orderBy($this->alias . "." . $sortColname, strtoupper($sortDir));
+                $sort=$sortColname;
+                if(count(explode("-",$sortColname))>1)
+                    $sort = explode("-",$sortColname)[0];
+                $query->orderBy($this->alias . "." . $sort, strtoupper($sortDir));
             }
         }
 
