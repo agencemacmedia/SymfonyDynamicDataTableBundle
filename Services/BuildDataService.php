@@ -34,7 +34,7 @@ class BuildDataService
      * @param string $template Path to twig template for HTML formating of your data (see template.html.twig for exemple)
      * @param string $columns all the columns in the datatables
      */
-    public function set(string $object, string $template, string $columns, $renders = null)
+    public function set(string $object, string $template, string $columns, $renders = null,$query = null)
     {
         if ($renders != null)
             $this->renders = $renders;
@@ -48,7 +48,10 @@ class BuildDataService
             if (method_exists($obj, "getAlias")) {
                 $this->alias = $obj->getAlias();
             }
-            $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->alias);
+            if($query === null)
+                $this->qb = $this->em->getRepository($object)->createQueryBuilder($this->alias);
+            else
+                $this->qb = $query;
             $columnSplit = explode(",", $columns);
             $joined = [];
 
@@ -75,7 +78,7 @@ class BuildDataService
                         if (!in_array($suffix .$col[$x], $joined)) {
                             $this->qb->leftJoin($suffix . $col[$x], $col[$x])
                                 ->addSelect($col[$x]);
-                            array_push($joined, $suffix. $col[$x - 1]);
+                            array_push($joined, $suffix. $col[$x]);
                         }
 
 
