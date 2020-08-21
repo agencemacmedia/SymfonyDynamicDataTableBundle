@@ -229,9 +229,10 @@ class BuildDataService
             $sortProp = $sortProp[count($sortProp)-2];
         if ($sortDir !== null && $sortProp !== null && (in_array($sortProp, $classProp) || in_array($sortColname,$classProp))) {
             if (count(explode(".", $sortColname)) > 1) {
-                $sort=$sortColname;
-                if(count(explode("-",$sortColname))>1)
-                    $sort = explode("-",$sortColname)[0];
+                $exploded =explode(".", $sortColname);
+                $sort=$exploded[count($exploded)-2].".".$exploded[count($exploded)-1];
+                if(count(explode("-",$sort))>1)
+                    $sort = explode("-",$sort)[0];
                 $query->orderBy($sort, strtoupper($sortDir));
             } else {
                 $sort=$sortColname;
